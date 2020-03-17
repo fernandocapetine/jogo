@@ -1,0 +1,708 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+<HEAD>
+<META NAME="description" content="Blocks is a PC-Game, which is a part of the '7 by one stroke' package, translated from C++ into HTML and JavaScript">
+<META NAME="author" content="Lutz Tautenhahn">
+<META NAME="keywords" content="Game, Blocks, Streich, Stroke, JavaScript">
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+<META HTTP-EQUIV="imagetoolbar" CONTENT="false">
+<title>Blocks</title>
+<script for=document event="onkeydown()" language="JScript">
+if (window.event) KeyDown(window.event.keyCode);
+</script>
+<script language="JavaScript">
+var IsNetscape = false, IsNetscape4 = false;
+if (navigator.appName == "Netscape")
+{ IsNetscape = true;
+  if (parseInt(navigator.appVersion)<5) IsNetscape4 = true;
+}  
+if (navigator.appName != "Microsoft Internet Explorer")
+{ document.captureEvents(Event.KEYDOWN)
+}
+document.onkeydown = NetscapeKeyDown;
+
+function NetscapeKeyDown(key)
+{ KeyDown(key.which);
+}  
+var i, j, n, IsOver, EndTime, StartTime, X0, Y0=20;
+var FSize=7, BSize=3, I_Sel, J_Sel, NPaint;
+PaintFld=new Array(FSize);
+for (i=0; i<FSize; i++) PaintFld[i]=new Array(FSize);
+Fld=new Array(7);
+for (i=0; i<7; i++) Fld[i]=new Array(FSize);
+for (i=0; i<7; i++)
+{ for (j=0; j<FSize; j++) Fld[i][j]=new Array(FSize);
+}
+PosX=new Array(0,1,2,3,0,0,0);
+PosY=new Array(0,0,0,0,1,2,3);
+Block=new Array(BSize);
+for (i=0; i<BSize; i++) Block[i]=new Array(BSize);
+for (i=0; i<BSize; i++)
+{ for (j=0; j<BSize; j++) Block[i][j]=new Array(BSize);
+}
+TmpBlock=new Array(BSize);
+for (i=0; i<BSize; i++) TmpBlock[i]=new Array(BSize);
+for (i=0; i<BSize; i++)
+{ for (j=0; j<BSize; j++) TmpBlock[i][j]=new Array(BSize);
+}
+
+function KeyDown(whichkey)
+{ //alert(whichkey);
+  if (whichkey == 13) Space();
+  if (whichkey == 32) Space();
+
+  if (whichkey == 37) Left();
+  if (whichkey == 38) Up();
+  if (whichkey == 39) Right();
+  if (whichkey == 40) Down();
+
+  if (whichkey == 50) Down();
+  if (whichkey == 52) Left();
+  if (whichkey == 54) Right();
+  if (whichkey == 56) Up();
+
+  if (whichkey == 65458) Down();
+  if (whichkey == 65460) Left();
+  if (whichkey == 65462) Right();
+  if (whichkey == 65464) Up();
+}
+
+var ebid=(document.getElementById) ? true : false;
+function ElementById(id)
+{ if (ebid)
+    return(document.getElementById(id));
+  else
+    return(eval("document.all."+id));
+}  
+
+function Up()
+{ window.document.MainForm.UpButton.blur();
+  if (IsOver)
+  { Turn(0,-1);
+    return;
+  }
+  if (I_Sel%2==1)
+  { J_Sel--;
+    if (J_Sel<0) J_Sel++;
+  }
+  else
+  { J_Sel-=2;
+    if (J_Sel<0) J_Sel+=2;
+  }
+  RefreshX();
+}
+
+function Down()
+{ window.document.MainForm.DownButton.blur();
+  if (IsOver)
+  { Turn(0, 1);
+    return;
+  }
+  if (I_Sel%2==1)
+  { J_Sel++;
+    if (J_Sel>=FSize) J_Sel--;
+  }
+  else
+  { J_Sel+=2;
+    if (J_Sel>=FSize) J_Sel-=2;
+  }
+  RefreshX();
+}
+
+function Left()
+{ window.document.MainForm.LeftButton.blur();
+  if (IsOver)
+  { Turn(-1, 0);
+    return;
+  }
+  if (J_Sel%2==1)
+  { I_Sel--;
+    if (I_Sel<0) I_Sel++;
+  }
+  else
+  { I_Sel-=2;
+    if (I_Sel<0) I_Sel+=2;
+  }
+  RefreshX();
+}
+
+function Right()
+{ window.document.MainForm.RightButton.blur();
+  if (IsOver)
+  { Turn(1, 0);
+    return;
+  }
+  if (J_Sel%2==1)
+  { I_Sel++;
+    if (I_Sel>=FSize) I_Sel--;
+  }
+  else
+  { I_Sel+=2;
+    if (I_Sel>=FSize) I_Sel-=2;
+  }
+  RefreshX();
+}
+
+function Space()
+{ window.document.MainForm.SpaceButton.blur();
+  if (IsOver) return;
+  PaintFld[I_Sel][J_Sel]++;
+  PaintFld[I_Sel][J_Sel]%=2;
+  RefreshFld(NPaint);
+  if (PaintFld[I_Sel][J_Sel]!=Fld[NPaint][I_Sel][J_Sel])
+  { alert("Sua suposição é errada !");
+    IsOver=true;
+    return;
+  }
+  OverTest();
+}
+
+function OverTest()
+{ var ii, jj;
+  IsOver=false;
+  for (ii=0; ii<FSize; ii++)
+  { for (jj=0; jj<FSize; jj++)
+    { if (Fld[NPaint][ii][jj]!=PaintFld[ii][jj]) return(false);
+    }
+  }
+  IsOver=true;
+  Now = new Date();
+  EndTime = Now.getTime() / 1000;
+  ii=Math.floor(EndTime - StartTime);
+  if (window.opener)
+  { if (window.opener.SetHighscores)
+      window.opener.SetHighscores("Blocks","",ii,-1);
+  }
+  alert("Valeu, você resolveu este jogo em "+ii+ " segundos !");
+  RefreshX();
+  Turn(0, 0);
+  return(true);
+}
+
+function Show()
+{ var ll, mm;
+  window.document.MainForm.ShowButton.blur();
+  for (ll=0; ll<FSize; ll++)
+  { for (mm=0; mm<FSize; mm++)
+      PaintFld[ll][mm]=Fld[NPaint][ll][mm];
+  }
+  RefreshFld(NPaint);
+  if (! IsOver) alert("Mostrar não é resolver !");
+  IsOver=true;
+  RefreshX();
+  Turn(0, 0);
+}
+
+function random(nn)
+{ return(Math.floor(Math.random()*1000) % nn);
+}
+
+function Init()
+{ var cc, ii, jj, kk, ll, mm, nn;
+
+  nn=random(4);
+  if (nn==0) NPaint=1;
+  if (nn==1) NPaint=3;
+  if (nn==2) NPaint=4;
+  if (nn==3) NPaint=6;
+
+  for (ii=0; ii<BSize; ii++)
+  { for (jj=0; jj<BSize; jj++)
+    { for (kk=0; kk<BSize; kk++)
+	Block[ii][jj][kk]=false;
+    }
+  }
+
+  nn=random(6);
+  for (mm=0; mm<2; mm++)
+  { ii=1; jj=1; kk=1;
+    if (BSize==4)
+    { if (nn==0) ii=2;
+      if (nn==1) jj=2;
+      if (nn==2) kk=2;
+      if (nn>2) { ii=2; jj=2; kk=2; }
+    }
+    for (ll=0; ll<3+mm; ll++)
+    { cc=random(3);
+      if (cc==0)
+      { for (ii=0; ii<BSize; ii++)
+	  Block[ii][jj][kk]=true;
+        ii=random(BSize);
+      }
+      if (cc==1)
+      { for (jj=0; jj<BSize; jj++)
+          Block[ii][jj][kk]=true;
+	jj=random(BSize);
+      }
+      if (cc==2)
+      { for (kk=0; kk<BSize; kk++)
+	  Block[ii][jj][kk]=true;
+        kk=random(BSize);
+      }
+    }
+  }
+
+  nn=0;
+  do
+  { ii=random(BSize);
+    jj=random(BSize);
+    kk=random(BSize);
+    if (! Block[ii][jj][kk])
+    { if (ii>0) { if (Block[ii-1][jj][kk]) nn++; }
+      if (jj>0) { if (Block[ii][jj-1][kk]) nn++; }
+      if (kk>0) { if (Block[ii][jj][kk-1]) nn++; }
+      if (ii<BSize-1) { if (Block[ii+1][jj][kk]) nn++; }
+      if (jj<BSize-1) { if (Block[ii][jj+1][kk]) nn++; }
+      if (kk<BSize-1) { if (Block[ii][jj][kk+1]) nn++; }
+    }
+    if (nn>0) Block[ii][jj][kk]=true;
+  }
+  while (nn==0);
+
+  for (ll=0; ll<FSize; ll++)
+  { for (mm=0; mm<FSize; mm++)
+    { for (nn=0; nn<7; nn++)
+	Fld[nn][ll][mm]=0;
+      if ((ll%2==1)&(mm%2==1))
+	PaintFld[ll][mm]=1;
+      else
+        PaintFld[ll][mm]=0;
+    }
+  }
+  for (kk=0; kk<BSize; kk++)
+  { for (ii=0; ii<BSize; ii++)
+    { for (jj=0; jj<BSize; jj++)
+      { if (Block[ii][jj][kk])
+	{ Fld[0][2*ii+1][2*jj+1]=1;
+	  Fld[0][2*ii][2*jj+1]=1;
+	  Fld[0][2*ii+2][2*jj+1]=1;
+	  Fld[0][2*ii+1][2*jj]=1;
+	  Fld[0][2*ii+1][2*jj+2]=1;
+	  if (ii>0) { if (Block[ii-1][jj][kk]) Fld[0][2*ii][2*jj+1]=0; }
+	  if (ii<BSize-1) { if (Block[ii+1][jj][kk]) Fld[0][2*ii+2][2*jj+1]=0; }
+	  if (jj>0) { if (Block[ii][jj-1][kk]) Fld[0][2*ii+1][2*jj]=0; }
+	  if (jj<BSize-1) { if (Block[ii][jj+1][kk]) Fld[0][2*ii+1][2*jj+2]=0; }
+	}
+      }
+    }
+  }
+  for (ii=0; ii<BSize; ii++)
+  { for (kk=0; kk<BSize; kk++)
+    { for (jj=0; jj<BSize; jj++)
+      { if (Block[ii][jj][BSize-1-kk])
+	{ Fld[1][2*kk+1][2*jj+1]=1;
+	  Fld[1][2*kk][2*jj+1]=1;
+	  Fld[1][2*kk+2][2*jj+1]=1;
+	  Fld[1][2*kk+1][2*jj]=1;
+	  Fld[1][2*kk+1][2*jj+2]=1;
+	  if (kk>0) { if (Block[ii][jj][BSize-kk]) Fld[1][2*kk][2*jj+1]=0; }
+	  if (kk<BSize-1) { if (Block[ii][jj][BSize-kk-2]) Fld[1][2*kk+2][2*jj+1]=0; }
+	  if (jj>0) { if (Block[ii][jj-1][BSize-1-kk]) Fld[1][2*kk+1][2*jj]=0; }
+	  if (jj<BSize-1) { if (Block[ii][jj+1][BSize-1-kk]) Fld[1][2*kk+1][2*jj+2]=0; }
+	}
+      }
+    }
+  }
+  for (kk=BSize-1; kk>=0; kk--)
+  { for (ii=0; ii<BSize; ii++)
+    { for (jj=0; jj<BSize; jj++)
+      { if (Block[BSize-1-ii][jj][kk])
+	{ Fld[2][2*ii+1][2*jj+1]=1;
+	  Fld[2][2*ii][2*jj+1]=1;
+	  Fld[2][2*ii+2][2*jj+1]=1;
+	  Fld[2][2*ii+1][2*jj]=1;
+	  Fld[2][2*ii+1][2*jj+2]=1;
+	  if (ii>0) { if (Block[BSize-ii][jj][kk]) Fld[2][2*ii][2*jj+1]=0; }
+	  if (ii<BSize-1) { if (Block[BSize-ii-2][jj][kk]) Fld[2][2*ii+2][2*jj+1]=0; }
+	  if (jj>0) { if (Block[BSize-1-ii][jj-1][kk]) Fld[2][2*ii+1][2*jj]=0; }
+	  if (jj<BSize-1) { if (Block[BSize-1-ii][jj+1][kk]) Fld[2][2*ii+1][2*jj+2]=0; }
+	}
+      }
+    }
+  }
+  for (ii=BSize-1; ii>=0; ii--)
+  { for (kk=0; kk<BSize; kk++)
+    { for (jj=0; jj<BSize; jj++)
+      { if (Block[ii][jj][kk])
+	{ Fld[3][2*kk+1][2*jj+1]=1;
+	  Fld[3][2*kk][2*jj+1]=1;
+	  Fld[3][2*kk+2][2*jj+1]=1;
+	  Fld[3][2*kk+1][2*jj]=1;
+	  Fld[3][2*kk+1][2*jj+2]=1;
+	  if (kk>0) { if (Block[ii][jj][kk-1]) Fld[3][2*kk][2*jj+1]=0; }
+	  if (kk<BSize-1) { if (Block[ii][jj][kk+1]) Fld[3][2*kk+2][2*jj+1]=0; }
+	  if (jj>0) { if (Block[ii][jj-1][kk]) Fld[3][2*kk+1][2*jj]=0; }
+	  if (jj<BSize-1) { if (Block[ii][jj+1][kk]) Fld[3][2*kk+1][2*jj+2]=0; }
+	}
+      }
+    }
+  }
+  for (jj=0; jj<BSize; jj++)
+  { for (ii=0; ii<BSize; ii++)
+    { for (kk=0; kk<BSize; kk++)
+      { if (Block[ii][jj][BSize-1-kk])
+	{ Fld[4][2*ii+1][2*kk+1]=1;
+	  Fld[4][2*ii][2*kk+1]=1;
+	  Fld[4][2*ii+2][2*kk+1]=1;
+	  Fld[4][2*ii+1][2*kk]=1;
+	  Fld[4][2*ii+1][2*kk+2]=1;
+	  if (ii>0) { if (Block[ii-1][jj][BSize-1-kk]) Fld[4][2*ii][2*kk+1]=0; }
+	  if (ii<BSize-1) { if (Block[ii+1][jj][BSize-1-kk]) Fld[4][2*ii+2][2*kk+1]=0; }
+	  if (kk>0) { if (Block[ii][jj][BSize-kk]) Fld[4][2*ii+1][2*kk]=0; }
+	  if (kk<BSize-1) { if (Block[ii][jj][BSize-2-kk]) Fld[4][2*ii+1][2*kk+2]=0; }
+	}
+      }
+    }
+  }
+  for (kk=BSize-1; kk>=0; kk--)
+  { for (ii=0; ii<BSize; ii++)
+    { for (jj=0; jj<BSize; jj++)
+      { if (Block[ii][BSize-1-jj][kk])
+	{ Fld[5][2*ii+1][2*jj+1]=1;
+	  Fld[5][2*ii][2*jj+1]=1;
+	  Fld[5][2*ii+2][2*jj+1]=1;
+	  Fld[5][2*ii+1][2*jj]=1;
+	  Fld[5][2*ii+1][2*jj+2]=1;
+	  if (ii>0) { if (Block[ii-1][BSize-1-jj][kk]) Fld[5][2*ii][2*jj+1]=0; }
+	  if (ii<BSize-1) { if (Block[ii+1][BSize-1-jj][kk]) Fld[5][2*ii+2][2*jj+1]=0; }
+	  if (jj>0) { if (Block[ii][BSize-jj][kk]) Fld[5][2*ii+1][2*jj]=0; }
+	  if (jj<BSize-1) { if (Block[ii][BSize-2-jj][kk]) Fld[5][2*ii+1][2*jj+2]=0; }
+	}
+      }
+    }
+  }
+  for (jj=BSize-1; jj>=0; jj--)
+  { for (ii=0; ii<BSize; ii++)
+    { for (kk=0; kk<BSize; kk++)
+      { if (Block[ii][jj][kk])
+	{ Fld[6][2*ii+1][2*kk+1]=1;
+	  Fld[6][2*ii][2*kk+1]=1;
+	  Fld[6][2*ii+2][2*kk+1]=1;
+	  Fld[6][2*ii+1][2*kk]=1;
+	  Fld[6][2*ii+1][2*kk+2]=1;
+	  if (ii>0) { if (Block[ii-1][jj][kk]) Fld[6][2*ii][2*kk+1]=0; }
+	  if (ii<BSize-1) { if (Block[ii+1][jj][kk]) Fld[6][2*ii+2][2*kk+1]=0; }
+	  if (kk>0) { if (Block[ii][jj][kk-1]) Fld[6][2*ii+1][2*kk]=0; }
+	  if (kk<BSize-1) { if (Block[ii][jj][kk+1]) Fld[6][2*ii+1][2*kk+2]=0; }
+	}
+      }
+    }
+  }
+
+  I_Sel=1; J_Sel=1;
+  IsOver=false;
+  if (IsNetscape) X0=Math.floor(window.innerWidth/2)-161;
+  else X0=Math.floor(document.body.clientWidth/2)-161;
+  if (isNaN(X0)) X0=20;
+  RefreshScreen();
+  window.document.MainForm.NewButton.blur();
+  Now = new Date();
+  StartTime = Now.getTime() / 1000;
+}
+
+function Turn(xx, yy)
+{ var nn, ii, jj;
+  for (nn=0; nn<BSize; nn++)
+  { for (ii=0; ii<BSize; ii++)
+    { for (jj=0; jj<BSize; jj++)
+        TmpBlock[nn][ii][jj]=Block[nn][ii][jj];
+    }
+  }
+  if (xx==-1)
+  { for (nn=0; nn<BSize; nn++)
+    { for (ii=0; ii<BSize; ii++)
+      { for (jj=0; jj<BSize; jj++)
+          Block[nn][ii][jj]=TmpBlock[jj][ii][BSize-nn-1];
+      }
+    }
+  }
+  if (xx==1)
+  { for (nn=0; nn<BSize; nn++)
+    { for (ii=0; ii<BSize; ii++)
+      { for (jj=0; jj<BSize; jj++)
+          Block[nn][ii][jj]=TmpBlock[BSize-jj-1][ii][nn];
+      }
+    }
+  }
+  if (yy==-1)
+  { for (nn=0; nn<BSize; nn++)
+    { for (ii=0; ii<BSize; ii++)
+      { for (jj=0; jj<BSize; jj++)
+          Block[nn][ii][jj]=TmpBlock[nn][jj][BSize-ii-1];
+      }
+    }
+  }
+  if (yy==1)
+  { for (nn=0; nn<BSize; nn++)
+    { for (ii=0; ii<BSize; ii++)
+      { for (jj=0; jj<BSize; jj++)
+          Block[nn][ii][jj]=TmpBlock[nn][BSize-jj-1][ii];
+      }
+    }
+  }
+  if (IsNetscape4)
+  { for (nn=0; nn<3; nn++)
+    { for (ii=0; ii<3; ii++)
+      { for (jj=0; jj<3; jj++)
+        { if ((IsOver)&&(Block[ii][jj][nn]))
+            document.layers["b3d_"+nn+"_"+ii+"_"+jj].visibility="show";
+          else
+            document.layers["b3d_"+nn+"_"+ii+"_"+jj].visibility="hide";
+        }
+      }
+    }
+  }
+  else
+  { for (nn=0; nn<3; nn++)
+    { for (ii=0; ii<3; ii++)
+      { for (jj=0; jj<3; jj++)
+        { if ((IsOver)&&(Block[ii][jj][nn]))
+            with (ElementById("b3d_"+nn+"_"+ii+"_"+jj+"0")) style.visibility="visible";
+          else
+            with (ElementById("b3d_"+nn+"_"+ii+"_"+jj+"0")) style.visibility="hidden";
+        }
+      }
+    }
+  }
+}
+
+function RefreshX()
+{ if (IsNetscape4)
+  { with (document.layers['x'])
+    { left=X0+(PosX[NPaint]*(FSize+1)+I_Sel+1)*10-10;
+      top=Y0+(PosY[NPaint]*(FSize+1)+J_Sel+1)*10-10;
+      if (! IsOver) visibility="show";
+      else visibility="hide";
+    }
+  }
+  else
+  { with (ElementById("x"))
+    { style.left=X0+(PosX[NPaint]*(FSize+1)+I_Sel+1)*10-10;
+      style.top=Y0+(PosY[NPaint]*(FSize+1)+J_Sel+1)*10-10;
+      if (! IsOver) style.visibility="visible";
+      else style.visibility="hidden";
+    }
+  }
+}
+
+function RefreshFld(nn)
+{ var ii, jj;
+  if (nn==NPaint)
+  { for (ii=1; ii<FSize; ii+=2)
+    { for (jj=1; jj<FSize; jj+=2)
+      { if (PaintFld[ii][jj]==1)
+        { if (IsNetscape4)
+            document.layers['b_'+nn+'_'+ii+'_'+jj].visibility="show";
+          else 
+            with (ElementById("b_"+nn+"_"+ii+"_"+jj+"0")) style.visibility="visible";
+        }
+        else
+        { if (IsNetscape4)
+            document.layers['b_'+nn+'_'+ii+'_'+jj].visibility="hide";
+          else
+            with (ElementById("b_"+nn+"_"+ii+"_"+jj+"0")) style.visibility="hidden";
+        }
+      }
+    }
+    for (ii=0; ii<FSize; ii++)
+    { for (jj=0; jj<FSize; jj++)
+      { if ((ii+jj)%2==1)
+        { if (PaintFld[ii][jj]==1)
+          { if (IsNetscape4)
+              document.layers['b_'+nn+'_'+ii+'_'+jj].visibility="show";
+            else 
+              with (ElementById("b_"+nn+"_"+ii+"_"+jj+"0")) style.visibility="visible";
+          }
+          else
+          { if (IsNetscape4)
+              document.layers['b_'+nn+'_'+ii+'_'+jj].visibility="hide";
+            else
+              with (ElementById("b_"+nn+"_"+ii+"_"+jj+"0")) style.visibility="hidden";
+          }
+        }
+      }
+    }
+  }
+  else
+  { for (ii=1; ii<FSize; ii+=2)
+    { for (jj=1; jj<FSize; jj+=2)
+      { if (Fld[nn][ii][jj]==1)
+        { if (IsNetscape4)
+            document.layers['b_'+nn+'_'+ii+'_'+jj].visibility="show";
+          else 
+            with (ElementById("b_"+nn+"_"+ii+"_"+jj+"0")) style.visibility="visible";
+        }
+        else
+        { if (IsNetscape4)
+            document.layers['b_'+nn+'_'+ii+'_'+jj].visibility="hide";
+          else
+            with (ElementById("b_"+nn+"_"+ii+"_"+jj+"0")) style.visibility="hidden";
+        }
+      }
+    }
+    for (ii=0; ii<FSize; ii++)
+    { for (jj=0; jj<FSize; jj++)
+      { if ((ii+jj)%2==1)
+        { if (Fld[nn][ii][jj]==1)
+          { if (IsNetscape4)
+              document.layers['b_'+nn+'_'+ii+'_'+jj].visibility="show";
+            else 
+              with (ElementById("b_"+nn+"_"+ii+"_"+jj+"0")) style.visibility="visible";
+          }
+          else
+          { if (IsNetscape4)
+              document.layers['b_'+nn+'_'+ii+'_'+jj].visibility="hide";
+            else
+              with (ElementById("b_"+nn+"_"+ii+"_"+jj+"0")) style.visibility="hidden";
+          }
+        }
+      }
+    }
+  }
+}
+
+function RefreshScreen()
+{ var ii;
+  for (ii=0; ii<7; ii++) RefreshFld(ii);
+  RefreshX();
+  Turn(0, 0);
+}
+
+function Help()
+{ alert("Aqui você pode ver diversas vistas de um corpo de três dimençãos"+
+      "\nque consiste em vários cubos pequenos do mesmo tamanho. Sua"+ 
+      "\ntarefa é descobrir a vista faltante no lugar com a cruz vermelha."+
+      "\nVocê pode usar a cruz vermelha e desenhar uma borda ou apagar uma"+
+      "\nparte da superfície. Você pode usar as teclas ou as teclas de seta e "+
+      "\na barra de espaço para este jogo. Boa sorte!");
+}
+</script>
+</HEAD>
+<BODY bgcolor=#ffffff text=#000000 onResize="javascript:history.go(0)">
+<form name="MainForm">
+<DIV align=center>
+<table noborder><tr><td height=340>&nbsp;</td></tr></table>
+<table noborder width=240><tr><td align=left>
+  <table noborder cellpadding=1 cellspacing=1>
+    <tr><td>&nbsp;</td>
+        <td align=center><input type=button name="UpButton" value="&nbsp;&nbsp;/\&nbsp;&nbsp;" onClick="javascript:Up()"></td>
+        <td>&nbsp;</td>
+    </tr>
+    <tr><td align=right><input type=button name="LeftButton" value="&nbsp;&lt;-&nbsp;" onClick="javascript:Left()"></td>
+        <td align=center><input type=button name="SpaceButton" value="[&nbsp;&nbsp;&nbsp;&nbsp;]" onClick="javascript:Space()"></td>
+        <td align=left><input type=button name="RightButton" value="&nbsp;-&gt;&nbsp;" onClick="javascript:Right()"></td>
+    </tr>
+    <tr><td>&nbsp;</td>
+        <td align=center><input type=button name="DownButton" value="&nbsp;&nbsp;\/&nbsp;&nbsp;" onClick="javascript:Down()"></td>
+        <td>&nbsp;</td>
+    </tr>
+ </table>
+</td><td align=right>
+  <table noborder cellpadding=1 cellspacing=1>
+    <tr><td align=right><input type=button name="NewButton" value="novo" style="width:60" width=60 onClick="javascript:Init()"></td></tr>
+    <tr><td align=right><input type=button name="ShowButton" value="mostra" style="width:60" width=60 onClick="javascript:Show()"></td></tr>
+    <tr><td align=right><input type=button name="HelpButton" value="ajuda" style="width:60" width=60 onClick="javascript:Help()"></td></tr>
+  </table>
+</td></tr></table>
+<script language="JavaScript">
+document.open("text/plain");
+if (IsNetscape) X0=Math.floor(window.innerWidth/2)-161;
+else  X0=Math.floor(document.body.clientWidth/2)-161;
+if (isNaN(X0)) X0=20;
+if (IsNetscape4)
+{ document.writeln("<layer id='bg' top="+Y0+" left="+X0+" width=323 height=323 z-Index=1 visibility=show>");
+  document.writeln("<img src=\"block_bg.gif\">");
+  document.writeln("</layer>");
+  for (n=0; n<7; n++)
+  { for (i=1; i<FSize; i+=2)
+    { for (j=1; j<FSize; j+=2)
+      { document.writeln("<layer id='b_"+n+"_"+i+"_"+j+"' top="+eval(Y0+(PosY[n]*(FSize+1)+j)*10)+" left="+eval(X0+(PosX[n]*(FSize+1)+i)*10)+" width=20 height=20 z-Index=2 visibility=show>");
+        document.writeln("<img src=\"block.gif\">");
+        document.writeln("</layer>");
+      }
+    }
+  }
+  for (n=0; n<7; n++)
+  { for (i=0; i<FSize; i++)
+    { for (j=0; j<FSize; j++)
+      { if ((i+j)%2==1)
+	{ if (i%2==0)
+          { document.writeln("<layer id='b_"+n+"_"+i+"_"+j+"' top="+eval(Y0+(PosY[n]*(FSize+1)+j)*10-1)+" left="+eval(X0+(PosX[n]*(FSize+1)+i)*10+9)+" width=20 height=20 z-Index=3 visibility=show>");
+            document.writeln("<img src=\"block_vl.gif\">");
+            document.writeln("</layer>");
+          }
+          else
+          { document.writeln("<layer id='b_"+n+"_"+i+"_"+j+"' top="+eval(Y0+(PosY[n]*(FSize+1)+j)*10+9)+" left="+eval(X0+(PosX[n]*(FSize+1)+i)*10-1)+" width=20 height=20 z-Index=3 visibility=show>");
+            document.writeln("<img src=\"block_hl.gif\">");
+            document.writeln("</layer>");
+          }
+        }
+      }
+    }
+  }
+  for (n=0; n<BSize; n++)
+  { for (i=0; i<BSize; i++)
+    { for (j=0; j<BSize; j++)
+      { document.writeln("<layer id='b3d_"+n+"_"+i+"_"+j+"' top="+eval(Y0+100+n*11-i*3+j*45)+" left="+eval(X0+100+n*12+i*45)+" width=100 height=100 z-Index="+eval(10+n*5-i*2-j)+" visibility=show>");
+        document.writeln("<img src=\"block_3d.gif\">");
+        document.writeln("</layer>");
+      }
+    }
+  }
+  document.writeln("<layer id='x' top="+Y0+" left="+X0+" width=20 height=20 z-Index=4 visibility=show>");
+  document.writeln("<img src=\"block_x.gif\">");
+  document.writeln("</layer>");
+}
+else
+{ document.writeln("<div id=\"bg\" style=\"position:absolute; top:"+eval(Y0-2)+"; left:"+eval(X0-2)+"; width:323; height:323; z-Index:1; visibility:visible;\">");
+  document.writeln("<img src=\"block_bg.gif\">");
+  document.writeln("</div>");
+  for (n=0; n<7; n++)
+  { for (i=1; i<FSize; i+=2)
+    { for (j=1; j<FSize; j+=2)
+      { document.writeln("<div id=\"b_"+n+"_"+i+"_"+j+"0\" style=\"position:absolute; top:"+eval(Y0+(PosY[n]*(FSize+1)+j)*10)+"; left:"+eval(X0+(PosX[n]*(FSize+1)+i)*10)+"; width:20; height:20; z-Index:2; visibility:visible;\">");
+        document.writeln("<img src=\"block.gif\">");
+        document.writeln("</div>");
+      }
+    }
+  }
+  for (n=0; n<7; n++)
+  { for (i=0; i<FSize; i++)
+    { for (j=0; j<FSize; j++)
+      { if ((i+j)%2==1)
+	{ if (i%2==0)
+          { document.writeln("<div id=\"b_"+n+"_"+i+"_"+j+"0\" style=\"position:absolute; top:"+eval(Y0+(PosY[n]*(FSize+1)+j)*10-1)+"; left:"+eval(X0+(PosX[n]*(FSize+1)+i)*10+9)+"; width:20; height:20; z-Index:3; visibility:visible;\">");
+            document.writeln("<img src=\"block_vl.gif\">");
+            document.writeln("</div>");
+          }
+          else
+          { document.writeln("<div id=\"b_"+n+"_"+i+"_"+j+"0\" style=\"position:absolute; top:"+eval(Y0+(PosY[n]*(FSize+1)+j)*10+9)+"; left:"+eval(X0+(PosX[n]*(FSize+1)+i)*10-1)+"; width:20; height:20; z-Index:3; visibility:visible;\">");
+            document.writeln("<img src=\"block_hl.gif\">");
+            document.writeln("</div>");
+          }
+        }
+      }
+    }
+  }
+  for (n=0; n<BSize; n++)
+  { for (i=0; i<BSize; i++)
+    { for (j=0; j<BSize; j++)
+      { document.writeln("<div id=\"b3d_"+n+"_"+i+"_"+j+"0\" style=\"position:absolute; top:"+eval(Y0+100+n*11-i*3+j*45)+"; left:"+eval(X0+100+n*12+i*45)+"; width:100; height:100; z-Index:"+eval(10+n*5-i*2-j)+"; visibility:visible;\">");
+        document.writeln("<img src=\"block_3d.gif\">");
+        document.writeln("</div>");
+      }
+    }
+  }
+  document.writeln("<div id=\"x\" style=\"position:absolute; top:"+Y0+"; left:"+X0+"; width:20; height:20; z-Index:4; visibility:visible;\">");
+  document.writeln("<img src=\"block_x.gif\">");
+  document.writeln("</div>");
+}
+document.close;
+
+window.focus();
+Init();
+</script>
+</DIV>
+</form>
+</BODY>
+</HTML>
